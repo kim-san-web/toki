@@ -1,0 +1,615 @@
+/*
+ * The notch surface.
+ *
+ * Everything is expressed against the *edge* rather than against the screen:
+ * `.stage--top` and friends set flex direction and origin once, and every rule
+ * below is written as if the edge were always "behind" the content. That is
+ * what keeps one stylesheet honest across four placements.
+ */
+
+/*
+ * The stage fills the window and is entirely click-through; only `.stack`
+ * inside it opts back in. The window is sized for its worst case, so most of
+ * this area is empty transparent space over other applications.
+ */
+.stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+}
+
+.stage--top { align-items: flex-start; justify-content: center; }
+.stage--bottom { align-items: flex-end; justify-content: center; }
+.stage--left { align-items: center; justify-content: flex-start; }
+.stage--right { align-items: center; justify-content: flex-end; }
+
+/*
+ * The drawn region, and the only thing that takes the mouse.
+ *
+ * `position: relative` anchors the card, which is absolutely positioned so a
+ * closed card adds nothing to this box -- otherwise the hover target would be
+ * the full height of a card even when none is showing, and the notch would
+ * expand whenever the pointer passed anywhere near the top of the screen.
+ */
+.stack {
+  position: relative;
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.stage--top .stack { flex-direction: column; }
+.stage--bottom .stack { flex-direction: column-reverse; }
+.stage--left .stack { flex-direction: row; }
+.stage--right .stack { flex-direction: row-reverse; }
+
+/* ---- the shell: the pill, and the body it grows into ---------------------- */
+
+.shell {
+  pointer-events: auto;
+  background: var(--toki-surface);
+  backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid var(--toki-hairline);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 12px 34px rgba(0, 0, 0, 0.42);
+  /* One transition for shape and one for opacity, on the same easing, so the
+     pill does not appear to accelerate independently of what it becomes. */
+  transition:
+    border-radius var(--base) var(--ease),
+    padding var(--base) var(--ease),
+    background var(--base) var(--ease),
+    transform var(--base) var(--ease);
+  will-change: transform;
+}
+
+/* The resting pill hugs the edge: square against it, rounded away from it. */
+.stage--top .shell { border-radius: 0 0 14px 14px; border-top: none; }
+.stage--bottom .shell { border-radius: 14px 14px 0 0; border-bottom: none; }
+.stage--left .shell { border-radius: 0 14px 14px 0; border-left: none; }
+.stage--right .shell { border-radius: 14px 0 0 14px; border-right: none; }
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px 6px;
+  color: var(--toki-text);
+  opacity: 0.82;
+  transition: opacity var(--fast) var(--ease);
+}
+
+.stage--left .pill,
+.stage--right .pill {
+  flex-direction: column;
+  padding: 13px 5px 13px 6px;
+}
+
+.stage:hover .pill { opacity: 1; }
+
+.pill__dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.stage--left .pill__dots,
+.stage--right .pill__dots { flex-direction: column; }
+
+.pill__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  transition: background var(--base) var(--ease), box-shadow var(--base) var(--ease);
+}
+
+/* A working provider's dot breathes; a waiting one is steady and amber, so the
+   two states are told apart by motion as well as by colour. */
+.pill__dot--working { animation: dot-breathe 1.8s var(--ease) infinite; }
+.pill__dot--waiting { box-shadow: 0 0 0 2px rgba(242, 230, 61, 0.24); }
+.pill__dot--unavailable { opacity: 0.4; }
+
+@keyframes dot-breathe {
+  0%, 100% { opacity: 0.45; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.shell--open { padding: 10px 12px; }
+.stage--top .shell--open { border-radius: 0 0 20px 20px; }
+.stage--bottom .shell--open { border-radius: 20px 20px 0 0; }
+.stage--left .shell--open { border-radius: 0 20px 20px 0; }
+.stage--right .shell--open { border-radius: 20px 0 0 20px; }
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  /* No gap: the cells carry it as padding, so the row has no dead pixels. */
+  gap: 0;
+  animation: fade-in var(--base) var(--ease) both;
+}
+
+.row--vertical { flex-direction: column; align-items: center; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/*
+ * Cells sit flush and own the gap between them.
+ *
+ * The row's `gap` used to be dead space: crossing it fired a leave on one ring
+ * before the enter on the next, so the card blinked once per ring the pointer
+ * passed over. The gap is now padding *inside* each cell, making the row one
+ * continuous hover surface with no holes to fall through.
+ */
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 52px;
+  padding: 0 5px;
+}
+
+/* ---- rings ---------------------------------------------------------------- */
+
+.ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform var(--fast) var(--ease), filter var(--fast) var(--ease);
+}
+
+.ring:hover { transform: scale(1.06); }
+.ring:active { transform: scale(0.98); }
+.ring--selected { filter: drop-shadow(0 0 10px rgba(73, 233, 245, 0.28)); }
+.ring--dim { opacity: 0.42; }
+
+.ring:focus-visible {
+  outline: 2px solid var(--toki-accent);
+  outline-offset: 3px;
+}
+
+.ring__svg { position: absolute; inset: 0; }
+
+/* The arc is the only thing in the app that animates its own value, and it is
+   slow on purpose: a percentage that snaps looks like a glitch, one that
+   sweeps looks like a measurement. */
+.ring__arc {
+  transition: stroke-dashoffset var(--slow) var(--ease), stroke var(--base) var(--ease);
+}
+
+.ring__spinner {
+  transform-origin: center;
+  animation: spin 1.5s linear infinite;
+  opacity: 0.9;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ring__pulse {
+  transform-origin: center;
+  animation: pulse 1.6s var(--ease) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.94); }
+  50% { opacity: 0.9; transform: scale(1); }
+}
+
+.ring__glyph {
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--toki-text);
+  transition: color var(--base) var(--ease);
+}
+
+.ring__glyph--dim { color: var(--toki-faint); }
+
+/* A reached limit gets its own mark, because the headline percentage can still
+   look healthy while everything is paused. */
+.ring__block {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--band-critical);
+  box-shadow: 0 0 0 2px var(--toki-surface-solid);
+}
+
+.ring-value {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--toki-text);
+}
+
+.ring-value--dim { color: var(--toki-faint); }
+
+/* ---- the settings orb ------------------------------------------------------ */
+
+.orb {
+  align-self: center;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--toki-muted);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.orb:hover { background: rgba(255, 255, 255, 0.1); color: var(--toki-text); }
+.orb:focus-visible { outline: 2px solid var(--toki-accent); outline-offset: 2px; }
+
+/* An arc at rest, a gear on hover -- the same trick the reference used, and it
+   keeps a control the user rarely needs from shouting for attention. */
+.orb__arc { opacity: 1; transition: opacity var(--fast) var(--ease); }
+.orb__gear { opacity: 0; transform-origin: center; transition: opacity var(--fast) var(--ease), transform var(--base) var(--ease); }
+.orb:hover .orb__arc { opacity: 0; }
+.orb:hover .orb__gear { opacity: 1; transform: rotate(45deg); }
+
+/* ---- the detail card ------------------------------------------------------- */
+
+/*
+ * The card slot never collapses its box.
+ *
+ * An earlier version animated `max-height` from 0, which re-laid-out the whole
+ * stack on every hover and fought the window's own geometry. The slot now keeps
+ * its position and animates only compositor-friendly properties -- opacity and
+ * transform -- so moving between rings costs no layout at all.
+ */
+.card-slot {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.985);
+  transition:
+    opacity var(--base) var(--ease),
+    transform var(--base) var(--ease),
+    visibility 0s linear var(--base);
+  visibility: hidden;
+  padding: 8px 6px 0;
+  will-change: opacity, transform;
+}
+
+/*
+ * Anchored just past the shell, on the side the notch opens towards.
+ *
+ * `position: absolute` keeps a *closed* card out of the stack's box, so the
+ * hover target stays pill-sized until there is something to hover. When one is
+ * open the `.stack--card` class below grows that box to include it -- the
+ * pointer must be able to travel onto the card without the main process seeing
+ * it leave the drawn region and closing the notch under the cursor.
+ */
+.stage--top .card-slot { top: 100%; left: 50%; margin-left: -140px; }
+.stage--bottom .card-slot { bottom: 100%; left: 50%; margin-left: -140px; }
+.stage--left .card-slot { left: 100%; top: 50%; transform: translateX(-6px) scale(0.985); margin-top: -150px; }
+.stage--right .card-slot { right: 100%; top: 50%; transform: translateX(6px) scale(0.985); margin-top: -150px; }
+
+/*
+ * The hit region is computed in JS as the union of the shell and the card (see
+ * `notch.tsx`), never by padding this box. Padding was tried and is wrong: the
+ * card is anchored with `top: 100%`, which resolves against the *padded* box,
+ * so reserving room here pushed the card that same distance off-screen.
+ */
+
+.card-slot--open {
+  pointer-events: auto;
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition:
+    opacity var(--base) var(--ease),
+    transform var(--base) var(--ease),
+    visibility 0s;
+}
+
+.stage--bottom .card-slot { transform: translateY(6px) scale(0.985); padding: 8px 6px 0; }
+.stage--left .card-slot { padding: 0 0 0 8px; }
+.stage--right .card-slot { padding: 0 8px 0 0; }
+.stage--bottom .card-slot--open,
+.stage--left .card-slot--open,
+.stage--right .card-slot--open { transform: none; }
+
+.card {
+  width: 268px;
+  padding: 13px 14px 11px;
+  border-radius: 16px;
+  background: var(--toki-card);
+  backdrop-filter: blur(26px) saturate(140%);
+  border: 1px solid var(--toki-hairline);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  animation: card-in var(--base) var(--ease) both;
+}
+
+/* Only the card's *content* fades when switching provider; the slot around it
+   holds still, so the panel never appears to jump between rings. */
+@keyframes card-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 11px;
+}
+
+.card__glyph { display: grid; place-items: center; color: var(--toki-text); }
+
+.card__title {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.card__plan {
+  margin-left: auto;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--toki-muted);
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.card__block {
+  margin-bottom: 10px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  font-size: 11px;
+  color: var(--band-critical);
+  background: rgba(255, 90, 43, 0.1);
+  border: 1px solid rgba(255, 90, 43, 0.22);
+}
+
+.card__message {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--toki-muted);
+}
+
+.card__windows { list-style: none; display: flex; flex-direction: column; gap: 11px; }
+
+.window__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.window__label { font-size: 11.5px; color: var(--toki-text); }
+.window--head .window__label { font-weight: 600; }
+
+.window__value {
+  font-size: 10.5px;
+  color: var(--toki-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.window__track {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.window__fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width var(--slow) var(--ease), background var(--base) var(--ease);
+}
+
+.window__reset {
+  display: block;
+  margin-top: 5px;
+  font-size: 10.5px;
+  color: var(--toki-faint);
+}
+
+.card__sessions {
+  list-style: none;
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--toki-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session { display: flex; align-items: center; gap: 8px; }
+
+.session__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--toki-faint);
+}
+
+.session--busy .session__dot { background: var(--toki-text); animation: dot-breathe 1.8s var(--ease) infinite; }
+.session--waiting .session__dot { background: var(--band-watch); box-shadow: 0 0 0 3px rgba(242, 230, 61, 0.16); }
+
+.session__body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+
+.session__name {
+  font-size: 11px;
+  color: var(--toki-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session__detail {
+  font-size: 10px;
+  color: var(--toki-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session--waiting .session__detail { color: var(--band-watch); }
+
+.session__since { font-size: 10px; color: var(--toki-faint); flex: none; }
+
+.card__foot {
+  margin-top: 11px;
+  padding-top: 9px;
+  border-top: 1px solid var(--toki-hairline);
+  font-size: 10px;
+  color: var(--toki-faint);
+}
+
+.card__stale { color: var(--toki-muted); }
+
+
+/* ---- pending questions ------------------------------------------------------
+ *
+ * Shown above the detail card because they outrank it: a percentage is
+ * something to glance at, an unanswered question is something to act on.
+ */
+
+.asks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ask {
+  width: 268px;
+  padding: 11px 12px 10px;
+  border-radius: 14px;
+  background: var(--toki-card);
+  border: 1px solid rgba(242, 230, 61, 0.28);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.46);
+  animation: card-in var(--base) var(--ease) both;
+}
+
+.ask__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.ask__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--band-watch);
+  box-shadow: 0 0 0 3px rgba(242, 230, 61, 0.18);
+  animation: dot-breathe 1.8s var(--ease) infinite;
+  flex: none;
+}
+
+.ask__who {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--toki-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ask__when {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--toki-faint);
+  flex: none;
+}
+
+.ask__q {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--toki-text);
+  margin-bottom: 9px;
+  /* A long prompt must not stretch the notch: three lines, then ellipsis. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ask__routes { display: flex; gap: 6px; }
+
+.ask__btn {
+  flex: 1;
+  font: inherit;
+  font-size: 11px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--toki-hairline-strong);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--toki-text);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+}
+
+.ask__btn:hover { background: rgba(255, 255, 255, 0.12); }
+
+.ask__btn--primary {
+  background: var(--band-watch);
+  border-color: transparent;
+  /* Against a yellow fill, dark text is the only readable choice in every theme. */
+  color: #14171C;
+  font-weight: 600;
+}
+
+.ask__btn--primary:hover { filter: brightness(1.08); background: var(--band-watch); }
+
+
+/* Nothing connected yet: the pill keeps its shape, and the expanded state
+   offers the one action that matters instead of an empty row of dashes. */
+.pill__dot--none {
+  background: var(--toki-faint) !important;
+  opacity: 0.5;
+}
+
+.setup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  color: var(--toki-text);
+  font: inherit;
+  font-size: 11.5px;
+  padding: 6px 4px 6px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  opacity: 0.9;
+  transition: opacity var(--fast) var(--ease);
+}
+
+.setup:hover { opacity: 1; }
+.setup:focus-visible { outline: 2px solid var(--toki-accent); outline-offset: 2px; border-radius: 8px; }
+
+.row--vertical .setup {
+  flex-direction: column;
+  gap: 5px;
+  /* A vertical notch has no room for a sentence across the edge. */
+  font-size: 10px;
+  text-align: center;
+  white-space: normal;
+  max-width: 54px;
+}

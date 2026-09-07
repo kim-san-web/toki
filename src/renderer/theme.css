@@ -1,0 +1,82 @@
+:root {
+  /* Sampled from the TOKI logo sheet, not invented. */
+  --toki-ink: #14171C;
+  /*
+   * Near-opaque on purpose.
+   *
+   * `backdrop-filter` does not blur the *desktop* behind a transparent Electron
+   * window on Windows -- it only blurs what the window itself composites. So a
+   * translucent panel is simply see-through, and whatever is underneath (an
+   * editor's text, a browser tab) reads straight through the rings. The blur is
+   * kept below as a progressive enhancement where it works; the legibility
+   * comes from the alpha.
+   */
+  --toki-surface: rgba(20, 23, 28, 0.97);
+  --toki-surface-solid: #14171C;
+  --toki-card: rgba(24, 27, 33, 0.985);
+  --toki-hairline: rgba(255, 255, 255, 0.08);
+  --toki-hairline-strong: rgba(255, 255, 255, 0.14);
+
+  --toki-text: #F4F6F8;
+  --toki-muted: #8A9099;
+  --toki-faint: #5A6069;
+
+  --toki-accent: #49E9F5;
+  --toki-grey: #6A6E79;
+
+  --band-ample: #22E5A0;
+  --band-watch: #F2E63D;
+  --band-critical: #FF5A2B;
+  --track: #2A2E35;
+
+  /* One easing for everything, so the whole surface moves as one object. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --fast: 140ms;
+  --base: 260ms;
+  --slow: 420ms;
+
+  --font: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-num: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  /* The notch is a chromeless overlay: a stray text selection or a drag ghost
+     immediately breaks the illusion that it is part of the desktop. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--toki-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.notch-body {
+  background: transparent;
+  overflow: hidden;
+  /* Nothing is clickable unless a drawn element opts in -- the window itself is
+     click-through and the two must agree, or the notch eats clicks meant for
+     the app underneath. */
+  pointer-events: none;
+}
+
+.settings-body {
+  background: var(--toki-surface-solid);
+  overflow-y: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

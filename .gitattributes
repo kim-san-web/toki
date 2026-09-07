@@ -1,0 +1,18 @@
+# Normalise line endings in the repository, check out native on Windows.
+* text=auto
+
+*.ts    text
+*.tsx   text
+*.mjs   text
+*.cts   text
+*.json  text
+*.css   text
+*.html  text
+*.md    text
+*.yml   text
+
+*.png   binary
+*.jpg   binary
+*.gif   binary
+*.ico   binary
+*.exe   binary

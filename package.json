@@ -1,0 +1,99 @@
+{
+  "name": "toki",
+  "productName": "TOKI",
+  "version": "1.0.0",
+  "description": "A screen-edge notch for Windows showing how much of each AI coding tool's limit you have burned, and whether it is working, done, or waiting on you. Developed by Faisal Albusaidi.",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "cursor",
+    "glm",
+    "usage",
+    "rate-limit",
+    "notch",
+    "electron",
+    "windows",
+    "overlay",
+    "ai-coding"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Faisal Albusaidi"
+  },
+  "homepage": "https://github.com/mrcrapto/toki#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrcrapto/toki.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mrcrapto/toki/issues"
+  },
+  "main": "dist/main/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "npm run build && cross-env TOKI_DEV=1 electron .",
+    "demo": "npm run build && cross-env TOKI_DEMO=1 electron .",
+    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "tsc -p tsconfig.preload.json && node scripts/rename-preload.mjs",
+    "build:renderer": "vite build",
+    "start": "npm run build && electron .",
+    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.preload.json --noEmit",
+    "test": "npm run build:main && node scripts/run-tests.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "dist": "npm run build && electron-builder --win"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "cross-env": "^7.0.3",
+    "electron": "^44.2.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "build": {
+    "appId": "com.toki.notch",
+    "productName": "TOKI",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "TOKI"
+    },
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "icons/**",
+          "hook/**"
+        ]
+      }
+    ],
+    "copyright": "Copyright © 2026 Faisal Albusaidi"
+  }
+}
