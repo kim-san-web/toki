@@ -163,7 +163,7 @@ Pick a specific mode per provider in Settings, or leave it on Automatic.
 | **GLM** | yes | no | yes |
 
 ```mermaid
-flowchart LR
+flowchart TD
   A["Provider switched on"] --> B{"Mode in Settings"}
   B -->|Automatic| C["Try borrow"]
   B -->|Borrow| C
